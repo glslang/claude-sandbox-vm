@@ -1,0 +1,147 @@
+# Bootstrap.ps1
+# Run this ONCE on your host as Administrator to set everything up.
+
+#Requires -RunAsAdministrator
+
+$ErrorActionPreference = "Stop"
+
+Write-Host ""
+Write-Host "----------------------------------------------"
+Write-Host "  Claude Code Sandbox VM -- Bootstrap Setup"
+Write-Host "----------------------------------------------"
+Write-Host ""
+
+# -- Config --
+$config = @{
+    VMName        = "ClaudeDevSandbox"
+    VMPath        = "D:\Hyper-V\ClaudeDevSandbox"
+    SharedDrive   = "D:\Hyper-V\Shared"
+    CacheRoot     = "D:\ClaudeSandboxCache"
+    CredPath      = "$env:USERPROFILE\.claude-sandbox"
+    ProjectsRoot  = "D:\workspace"
+}
+
+# -- Step 1: Prerequisites --
+Write-Host "[1/6] Checking prerequisites..."
+
+if (-not (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All | Where-Object State -eq "Enabled")) {
+    Write-Host "  Hyper-V is not enabled. Enabling now (requires reboot)..."
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart
+    Write-Host "  REBOOT REQUIRED. Re-run Bootstrap.ps1 after rebooting."
+    exit 0
+}
+Write-Host "  Hyper-V: OK"
+
+# -- Step 2: Create folder structure --
+Write-Host "[2/6] Creating folder structure..."
+
+$folders = @(
+    $config.VMPath,
+    $config.SharedDrive,
+    "$($config.CacheRoot)\rust",
+    "$($config.CacheRoot)\vs-layout",
+    $config.CredPath,
+    $config.ProjectsRoot
+)
+foreach ($f in $folders) {
+    if (-not $f) { Write-Warning "Skipping null path"; continue }
+    New-Item -ItemType Directory -Force -Path $f | Out-Null
+    Write-Host "  Created: $f"
+}
+
+# Lock down credentials folder
+$aclTarget = $config.CredPath
+$aclGrant = "${env:USERNAME}:(OI)(CI)F"
+& icacls $aclTarget /inheritance:r /grant:r $aclGrant 2>&1 | Out-Null
+Write-Host "  Locked down: $aclTarget"
+
+# Write config file for other scripts to read
+$config | ConvertTo-Json | Out-File "$($config.CredPath)\config.json" -Encoding utf8
+Write-Host "  Config saved to: $($config.CredPath)\config.json"
+
+# -- Step 3: Download VS Build Tools offline layout --
+Write-Host "[3/6] Downloading VS Build Tools offline layout (~3-4 GB)..."
+Write-Host "      This is a one-time download and will be reused on every VM provision."
+
+$vsBootstrapper = "$($config.CacheRoot)\vs-layout\vs_buildtools.exe"
+if (-not (Test-Path $vsBootstrapper)) {
+    Invoke-WebRequest "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile $vsBootstrapper
+}
+
+$layoutPath = "$($config.CacheRoot)\vs-layout\layout"
+if (-not (Test-Path "$layoutPath\Response.json")) {
+    Write-Host "  Creating offline layout (this may take 10-15 minutes)..."
+    Write-Host "  Please wait..."
+    $proc = Start-Process $vsBootstrapper -ArgumentList @(
+        "--layout", $layoutPath,
+        "--add", "Microsoft.VisualStudio.Workload.VCTools",
+        "--add", "Microsoft.VisualStudio.Component.Windows11SDK.26100",
+        "--add", "Microsoft.VisualStudio.Component.VC.CMake.Project",
+        "--includeRecommended",
+        "--lang", "en-US",
+        "--quiet"
+    ) -Wait -NoNewWindow -PassThru
+    if ($proc.ExitCode -ne 0) {
+        Write-Warning "  VS Build Tools layout returned exit code $($proc.ExitCode)."
+        Write-Warning "  The provisioner can still download from internet instead."
+    } else {
+        Write-Host "  VS Build Tools layout ready."
+    }
+} else {
+    Write-Host "  VS Build Tools layout already exists, skipping."
+}
+
+# -- Step 4: Create VM --
+Write-Host "[4/6] Creating Hyper-V VM..."
+
+if (Get-VM -Name $config.VMName -ErrorAction SilentlyContinue) {
+    Write-Host "  VM '$($config.VMName)' already exists, skipping creation."
+} else {
+    & "$PSScriptRoot\scripts\New-ClaudeVM.ps1"
+    Write-Host "  VM created: $($config.VMName)"
+}
+
+# -- Step 5: Install Windows directly to VHDX --
+Write-Host ""
+Write-Host "[5/6] Install Windows to VM"
+Write-Host "      This applies Windows directly to the VHDX -- no DVD boot needed."
+Write-Host ""
+Write-Host "      You need a Windows 11 ISO. Download via Media Creation Tool:"
+Write-Host "      https://www.microsoft.com/software-download/windows11"
+Write-Host ""
+$isoPath = Read-Host "  Enter full path to your Windows 11 ISO"
+
+Write-Host ""
+Write-Host "      Optional: provide an autounattend.xml to skip OOBE prompts."
+Write-Host "      Generate one at: https://schneegans.de/windows/unattend-generator/"
+Write-Host ""
+$unattendPath = Read-Host "  Enter path to autounattend.xml (or press Enter to skip)"
+
+if (-not (Test-Path $isoPath)) {
+    Write-Host "  ERROR: ISO not found at '$isoPath'."
+    Write-Host "  Run manually once you have the ISO:"
+    Write-Host "    .\scripts\Install-Windows.ps1 -ISOPath <path>"
+} else {
+    $installArgs = @{ ISOPath = $isoPath }
+    if ($unattendPath -and (Test-Path $unattendPath)) {
+        $installArgs.UnattendPath = $unattendPath
+    }
+    & "$PSScriptRoot\scripts\Install-Windows.ps1" @installArgs
+}
+
+# -- Step 6: Next steps --
+Write-Host ""
+Write-Host "[6/6] Bootstrap complete. Next steps:"
+Write-Host ""
+Write-Host "  1. Complete Windows setup in the VM console (OOBE)."
+Write-Host "     (Skipped automatically if you provided autounattend.xml)"
+Write-Host ""
+Write-Host "  2. Provision the VM (switches network, copies files, installs tools):"
+Write-Host "     .\scripts\Start-Provision.ps1"
+Write-Host ""
+Write-Host "  3. After provisioning, shut down the VM and run on the host:"
+Write-Host "     .\scripts\Save-BaseSnapshot.ps1"
+Write-Host ""
+Write-Host "  4. Start your first dev session:"
+Write-Host "     .\Start-Session.ps1 -ProjectPath C:\Projects\myapp"
+Write-Host ""
