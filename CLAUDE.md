@@ -1,0 +1,140 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What This Project Is
+
+A PowerShell-based infrastructure toolkit that creates an isolated Hyper-V sandbox VM on Windows, purpose-built for running Claude Code with a native MSVC toolchain. Claude Code runs inside the VM, builds real Windows binaries (C++, Rust), and artifacts are extracted back to the host via PowerShell Direct (VMBus — no network required).
+
+**Requirements to use this project:** Windows 10/11 Pro/Enterprise with Hyper-V, a Windows 11 ISO, and a Claude Pro subscription. All scripts must be run as Administrator.
+
+## Key Commands
+
+### First-Time Setup
+
+```powershell
+# Step 1: Create VM, partition VHDX, apply Windows via DISM (prompts for ISO path)
+.\Bootstrap.ps1
+
+# Step 2: Provision toolchain (run on host — switches network, copies files into VM)
+.\scripts\Start-Provision.ps1
+# Then inside the VM:
+powershell -ExecutionPolicy Bypass -File C:\Invoke-Provision.ps1
+
+# Step 3: Save the clean snapshot (shut down VM first)
+.\scripts\Save-BaseSnapshot.ps1
+```
+
+### Daily Development
+
+```powershell
+# Basic session (VM fully isolated, no internet)
+.\Start-Session.ps1 -ProjectPath C:\Projects\myapp
+
+# With internet (needed for cargo fetch, npm install, etc.)
+.\Start-Session.ps1 -ProjectPath C:\Projects\myapp -Internet
+
+# Restore to clean snapshot before starting (reproducible build)
+.\Start-Session.ps1 -ProjectPath C:\Projects\myapp -Restore -Internet
+
+# Auto-extract artifacts when VM shuts down
+.\Start-Session.ps1 -ProjectPath C:\Projects\myapp -Internet -ExtractOnExit
+```
+
+Inside the VM after session starts:
+```powershell
+cd C:\workspace
+claude
+```
+
+### Artifact Extraction
+
+```powershell
+# Extract .exe/.dll/.pdb from C:\workspace\target\release
+.\scripts\Copy-Artifacts.ps1 -DestPath C:\Projects\myapp\artifacts
+
+# Wait for VM shutdown then extract
+.\scripts\Copy-Artifacts.ps1 -WaitForShutdown
+
+# Include additional file types
+.\scripts\Copy-Artifacts.ps1 -ExtraPatterns "*.json","*.toml"
+```
+
+### VM Management
+
+```powershell
+# Manually restore to clean snapshot
+Stop-VM -Name ClaudeDevSandbox -Force
+Restore-VMCheckpoint -VMName ClaudeDevSandbox -Name CleanProvisionedBase -Confirm:$false
+
+# Re-authenticate when OAuth expires (run inside VM with internet)
+claude login
+# Then shut down and re-snapshot
+```
+
+## Architecture
+
+### Script Roles
+
+| Script | Where It Runs | Purpose |
+|--------|---------------|---------|
+| `Bootstrap.ps1` | Host | One-time setup orchestrator |
+| `scripts/New-ClaudeVM.ps1` | Host | Creates Gen 2 VM (TPM, Secure Boot, SCSI layout) |
+| `scripts/Install-Windows.ps1` | Host | Applies Windows to VHDX via DISM (bypasses DVD boot) |
+| `scripts/Start-Provision.ps1` | Host | Switches to Default Switch, copies VS layout + provisioner into VM |
+| `scripts/Invoke-Provision.ps1` | **VM** | Installs VS Build Tools, Rust (MSVC), Node.js, Claude Code, enables PSRemoting |
+| `scripts/Save-BaseSnapshot.ps1` | Host | Captures `CleanProvisionedBase` checkpoint |
+| `scripts/Save-VMCredentials.ps1` | Host | Encrypts VM creds to `~/.claude-sandbox/vm-cred.xml` |
+| `Start-Session.ps1` | Host | Daily driver: restore/switch network/sync project/open console |
+| `scripts/Copy-Artifacts.ps1` | Host | Pulls build outputs from VM via PowerShell Direct |
+| `vm/Start-ClaudeCode.ps1` | VM | Optional VM startup script |
+
+### File Transfer Strategy
+
+All host↔VM file transfer uses **PowerShell Direct** (VMBus), which works without any network configuration:
+- Project sync into VM: `Copy-Item -ToSession` (excludes `artifacts/`, `.git/`, `target/`)
+- Artifact extraction: `Copy-Item -FromSession`
+- Pre-boot fallback: robocopy to SMB share at `\\localhost\ClaudeSandboxShare`
+
+### Networking
+
+Two modes, switched via `Connect-VMNetworkAdapter`:
+- **`Claude-Internal`** (default): internal switch, VM can reach host but not internet
+- **`Default Switch`**: NAT switch, gives VM internet access for package fetches
+
+### Configuration
+
+All scripts read `~/.claude-sandbox/config.json` (written by Bootstrap.ps1):
+```json
+{
+  "VMName": "ClaudeDevSandbox",
+  "VMPath": "D:\\Hyper-V\\ClaudeDevSandbox",
+  "SharedDrive": "D:\\Hyper-V\\Shared",
+  "CacheRoot": "D:\\ClaudeSandboxCache",
+  "CredPath": "%USERPROFILE%\\.claude-sandbox",
+  "ProjectsRoot": "D:\\workspace"
+}
+```
+Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host Windows user who created it).
+
+### VM Spec (set in `New-ClaudeVM.ps1`)
+
+- Gen 2, 80 GB dynamic VHDX, 4 vCPU, 4 GB RAM (dynamic 2–4 GB)
+- Secure Boot + TPM 2.0 (required for Windows 11)
+- HDD on SCSI controller 0, DVD on SCSI controller 1 — separated to avoid Gen 2 boot ordering issues
+- Automatic checkpoints disabled; checkpoint type set to Production
+
+### Toolchain Inside VM (installed by `Invoke-Provision.ps1`)
+
+- VS Build Tools 2022 with `VCTools` workload + Windows 11 SDK 26100 + CMake
+- Rust stable (`x86_64-pc-windows-msvc`) with clippy and rustfmt
+- Node.js (latest via winget)
+- Claude Code (`@anthropic-ai/claude-code`) authenticated via OAuth
+
+## Conventions
+
+- All scripts use `$ErrorActionPreference = "Stop"` — any uncaught error aborts execution.
+- Scripts that create directories use `New-Item -Force` to be idempotent.
+- `robocopy` exit codes 0–7 are success; the scripts treat non-zero robocopy exit as non-fatal (pipe to `Out-Null`).
+- The VS Build Tools offline layout (`D:\ClaudeSandboxCache\vs-layout\`) is downloaded once during Bootstrap and reused on every provision — avoid deleting it.
+- `Copy-Artifacts.ps1` defaults to extracting `*.exe`, `*.dll`, `*.pdb` from `C:\workspace\target\release`; pass `-ExtraPatterns` for additional types.
