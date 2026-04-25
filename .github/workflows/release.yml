@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release zip
+        run: |
+          zip -r claude-sandbox-vm-${{ github.ref_name }}.zip \
+            Bootstrap.ps1 \
+            Start-Session.ps1 \
+            autounattend.xml \
+            scripts/ \
+            vm/ \
+            LICENSE \
+            README.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --generate-notes \
+            claude-sandbox-vm-${{ github.ref_name }}.zip
