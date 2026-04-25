@@ -35,7 +35,8 @@ if (Test-Path $layoutInstaller) {
     $extraArgs = @("--noweb")
 } else {
     Write-Host "  Offline layout not found -- downloading from internet..."
-    Invoke-WebRequest "https://aka.ms/vs/18/release/vs_buildtools.exe" -OutFile $onlineInstaller
+    Invoke-WebRequest "https://aka.ms/vs/18/release/vs_buildtools.exe" -OutFile $onlineInstaller -UseBasicParsing
+    Unblock-File -Path $onlineInstaller
     $installer = $onlineInstaller
     $extraArgs = @()
 }
