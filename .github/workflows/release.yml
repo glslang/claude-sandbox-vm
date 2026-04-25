@@ -26,7 +26,9 @@ jobs:
             README.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: claude-sandbox-vm-${{ github.ref_name }}.zip
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --generate-notes \
+            claude-sandbox-vm-${{ github.ref_name }}.zip
