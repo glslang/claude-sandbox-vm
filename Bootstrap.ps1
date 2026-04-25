@@ -65,7 +65,7 @@ Write-Host "      This is a one-time download and will be reused on every VM pro
 
 $vsBootstrapper = "$($config.CacheRoot)\vs-layout\vs_buildtools.exe"
 if (-not (Test-Path $vsBootstrapper)) {
-    Invoke-WebRequest "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile $vsBootstrapper
+    Invoke-WebRequest "https://aka.ms/vs/18/release/vs_buildtools.exe" -OutFile $vsBootstrapper
 }
 
 $layoutPath = "$($config.CacheRoot)\vs-layout\layout"
