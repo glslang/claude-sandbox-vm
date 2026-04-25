@@ -64,8 +64,27 @@ Write-Host "[3/6] Downloading VS Build Tools offline layout (~3-4 GB)..."
 Write-Host "      This is a one-time download and will be reused on every VM provision."
 
 $vsBootstrapper = "$($config.CacheRoot)\vs-layout\vs_buildtools.exe"
+
+# Validate any existing download is a real PE (first 2 bytes == "MZ").
+# If it's an HTML error page from a failed download, delete and re-fetch.
+if (Test-Path $vsBootstrapper) {
+    $magic = [System.IO.File]::ReadAllBytes($vsBootstrapper) | Select-Object -First 2
+    if ($magic.Count -lt 2 -or $magic[0] -ne 0x4D -or $magic[1] -ne 0x5A) {
+        Write-Warning "  Existing vs_buildtools.exe is not a valid executable (bad PE header) -- deleting and re-downloading."
+        Remove-Item $vsBootstrapper -Force
+    }
+}
+
 if (-not (Test-Path $vsBootstrapper)) {
-    Invoke-WebRequest "https://aka.ms/vs/18/release/vs_buildtools.exe" -OutFile $vsBootstrapper
+    Write-Host "  Downloading vs_buildtools.exe bootstrapper..."
+    Invoke-WebRequest "https://aka.ms/vs/18/release/vs_buildtools.exe" -OutFile $vsBootstrapper -UseBasicParsing
+    # Remove Zone.Identifier so Windows won't block execution of the downloaded exe.
+    Unblock-File -Path $vsBootstrapper
+    # Validate the download succeeded and produced a real PE.
+    $magic = [System.IO.File]::ReadAllBytes($vsBootstrapper) | Select-Object -First 2
+    if ($magic.Count -lt 2 -or $magic[0] -ne 0x4D -or $magic[1] -ne 0x5A) {
+        throw "Downloaded vs_buildtools.exe is not a valid executable. The URL may be wrong or the download was interrupted. Check: https://aka.ms/vs/18/release/vs_buildtools.exe"
+    }
 }
 
 $layoutPath = "$($config.CacheRoot)\vs-layout\layout"
