@@ -127,7 +127,7 @@ Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host 
 
 ### Toolchain Inside VM (installed by `Invoke-Provision.ps1`)
 
-- VS Build Tools 2026 with `VCTools` workload + Windows 11 SDK 26100 + CMake
+- VS Build Tools 2022 with `VCTools` workload + Windows 11 SDK 26100 + CMake
 - Rust stable (`x86_64-pc-windows-msvc`) with clippy and rustfmt
 - Node.js (latest via winget)
 - Claude Code (`@anthropic-ai/claude-code`) authenticated via OAuth
