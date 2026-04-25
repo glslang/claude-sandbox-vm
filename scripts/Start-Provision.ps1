@@ -108,4 +108,4 @@ Write-Host "    .\scripts\Save-BaseSnapshot.ps1"
 Write-Host "----------------------------------------------"
 Write-Host ""
 
-vmconnect.exe localhost $cfg.VMName
+& "$PSScriptRoot\Open-VMConsole.ps1" -VMName $cfg.VMName

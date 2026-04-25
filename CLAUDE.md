@@ -87,6 +87,7 @@ claude login
 | `scripts/Save-VMCredentials.ps1` | Host | Encrypts VM creds to `~/.claude-sandbox/vm-cred.xml` |
 | `Start-Session.ps1` | Host | Daily driver: restore/switch network/sync project/open console |
 | `scripts/Copy-Artifacts.ps1` | Host | Pulls build outputs from VM via PowerShell Direct |
+| `scripts/Open-VMConsole.ps1` | Host | Launches `vmconnect.exe`, pre-writing the saved-config XML to skip Hyper-V's display dialog |
 | `vm/Start-ClaudeCode.ps1` | VM | Optional VM startup script |
 
 ### File Transfer Strategy
@@ -138,3 +139,4 @@ Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host 
 - `robocopy` exit codes 0–7 are success; the scripts treat non-zero robocopy exit as non-fatal (pipe to `Out-Null`).
 - The VS Build Tools offline layout (`D:\ClaudeSandboxCache\vs-layout\`) is downloaded once during Bootstrap and reused on every provision — avoid deleting it.
 - `Copy-Artifacts.ps1` defaults to extracting `*.exe`, `*.dll`, `*.pdb` from `C:\workspace\target\release`; pass `-ExtraPatterns` for additional types.
+- All console launches go through `scripts/Open-VMConsole.ps1`, which pre-populates the per-VM `vmconnect.rdp.<GUID>.config` (windowed 1920x1080) so Hyper-V's display-configuration dialog is skipped on first launch. Don't add raw `vmconnect.exe` calls.
