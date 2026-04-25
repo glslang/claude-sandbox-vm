@@ -199,4 +199,4 @@ Write-Host "  Boot order set to HDD only."
 Write-Host ""
 Write-Host "Starting VM..."
 Start-VM -Name $cfg.VMName
-vmconnect.exe localhost $cfg.VMName
+& "$PSScriptRoot\Open-VMConsole.ps1" -VMName $cfg.VMName

@@ -61,4 +61,4 @@ Get-VMFirmware -VMName $cfg.VMName | Select-Object -ExpandProperty BootOrder | F
 
 Write-Host "Starting VM..."
 Start-VM -Name $cfg.VMName
-vmconnect.exe localhost $cfg.VMName
+& "$PSScriptRoot\Open-VMConsole.ps1" -VMName $cfg.VMName

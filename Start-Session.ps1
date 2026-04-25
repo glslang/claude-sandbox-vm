@@ -119,7 +119,7 @@ if ($ready) {
 
 # -- Open VM console --
 Write-Host "Opening VM console..."
-vmconnect.exe localhost $cfg.VMName
+& "$PSScriptRoot\scripts\Open-VMConsole.ps1" -VMName $cfg.VMName
 
 Write-Host ""
 Write-Host "Session started. Inside the VM:"
