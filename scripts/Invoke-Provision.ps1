@@ -24,7 +24,7 @@ function Refresh-Path {
 }
 
 # -- 1. VS Build Tools --
-Write-Host "[1/7] Installing VS Build Tools..."
+Write-Host "[1/8] Installing VS Build Tools..."
 
 $layoutInstaller = "C:\vs-cache\layout\vs_buildtools.exe"
 $onlineInstaller = "$env:TEMP\vs_buildtools.exe"
@@ -56,7 +56,7 @@ if ($proc.ExitCode -notin 0, 3010) {
 }
 
 # -- 2. Rust (MSVC toolchain) --
-Write-Host "[2/7] Installing Rust..."
+Write-Host "[2/8] Installing Rust..."
 
 Invoke-WebRequest "https://win.rustup.rs/x86_64" -OutFile "$env:TEMP\rustup-init.exe"
 & "$env:TEMP\rustup-init.exe" -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
@@ -65,14 +65,14 @@ rustup component add clippy rustfmt
 Write-Host "  Rust installed: $(rustc --version)"
 
 # -- 3. Node.js --
-Write-Host "[3/7] Installing Node.js..."
+Write-Host "[3/8] Installing Node.js..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements OpenJS.NodeJS
 Refresh-Path
 Write-Host "  Node installed: $(node --version)"
 
 # -- 4. Git for Windows (Git Bash) --
-Write-Host "[4/7] Installing Git for Windows..."
+Write-Host "[4/8] Installing Git for Windows..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements Git.Git
 Refresh-Path
@@ -94,22 +94,28 @@ if ($gitBashExe) {
     Write-Warning "  bash.exe not found in expected locations -- set CLAUDE_CODE_GIT_BASH_PATH manually."
 }
 
-# -- 5. Claude Code --
-Write-Host "[5/7] Installing Claude Code..."
+# -- 5. Windows Terminal --
+Write-Host "[5/8] Installing Windows Terminal..."
+
+winget install --silent --accept-package-agreements --accept-source-agreements Microsoft.WindowsTerminal
+Write-Host "  Windows Terminal installed."
+
+# -- 6. Claude Code --
+Write-Host "[6/8] Installing Claude Code..."
 
 npm install -g @anthropic-ai/claude-code
 Refresh-Path
 Write-Host "  Claude Code installed: $(claude --version)"
 
-# -- 6. Authenticate --
-Write-Host "[6/7] Authenticating with Claude..."
+# -- 7. Authenticate --
+Write-Host "[7/8] Authenticating with Claude..."
 Write-Host "      A browser window will open. Complete the OAuth flow."
 Write-Host ""
 claude login
 Write-Host "  Authentication complete."
 
-# -- 7. Enable PSRemoting (for artifact extraction from host) --
-Write-Host "[7/7] Enabling PowerShell remoting..."
+# -- 8. Enable PSRemoting (for artifact extraction from host) --
+Write-Host "[8/8] Enabling PowerShell remoting..."
 
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 Set-Service WinRM -StartupType Automatic
