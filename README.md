@@ -43,7 +43,7 @@ Then **inside the VM**, run:
 powershell -ExecutionPolicy Bypass -File C:\Invoke-Provision.ps1
 ```
 
-This installs VS Build Tools, Rust (MSVC), Node.js, Claude Code, and does OAuth login.
+This installs VS Build Tools, Rust (MSVC), Node.js, Git, Windows Terminal, Oh My Posh (with CascadiaCode Nerd Font), and Claude Code, then does OAuth login.
 
 ### Step 4 -- Snapshot
 
@@ -140,6 +140,42 @@ claude-sandbox-vm/
 | Internet | Default Switch | cargo fetch, npm install, OAuth |
 
 Use `-Internet` flag on `Start-Session.ps1` to enable internet access.
+
+---
+
+## Customization
+
+### Oh My Posh theme
+
+Provisioning installs [Oh My Posh](https://ohmyposh.dev) with the `jandedobbeleer` theme and the CascadiaCode Nerd Font. To switch themes, edit the PowerShell profile inside the VM:
+
+```powershell
+notepad $PROFILE
+```
+
+Change the theme filename on the `oh-my-posh init` line:
+
+```powershell
+# Before
+oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\jandedobbeleer.omp.json" | Invoke-Expression
+
+# After (example: switch to the tokyo theme)
+oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\tokyo.omp.json" | Invoke-Expression
+```
+
+List all bundled themes:
+
+```powershell
+Get-ChildItem $env:POSH_THEMES_PATH -Filter *.omp.json | Select-Object -ExpandProperty BaseName
+```
+
+Or browse previews at [ohmyposh.dev/docs/themes](https://ohmyposh.dev/docs/themes). Reload the profile after saving:
+
+```powershell
+. $PROFILE
+```
+
+To persist the change across sessions, shut down the VM and re-snapshot after editing the profile.
 
 ---
 
