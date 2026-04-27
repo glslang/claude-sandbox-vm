@@ -24,7 +24,7 @@ function Refresh-Path {
 }
 
 # -- 1. VS Build Tools --
-Write-Host "[1/8] Installing VS Build Tools..."
+Write-Host "[1/9] Installing VS Build Tools..."
 
 $layoutInstaller = "C:\vs-cache\layout\vs_buildtools.exe"
 $onlineInstaller = "$env:TEMP\vs_buildtools.exe"
@@ -56,7 +56,7 @@ if ($proc.ExitCode -notin 0, 3010) {
 }
 
 # -- 2. Rust (MSVC toolchain) --
-Write-Host "[2/8] Installing Rust..."
+Write-Host "[2/9] Installing Rust..."
 
 Invoke-WebRequest "https://win.rustup.rs/x86_64" -OutFile "$env:TEMP\rustup-init.exe"
 & "$env:TEMP\rustup-init.exe" -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
@@ -65,14 +65,14 @@ rustup component add clippy rustfmt
 Write-Host "  Rust installed: $(rustc --version)"
 
 # -- 3. Node.js --
-Write-Host "[3/8] Installing Node.js..."
+Write-Host "[3/9] Installing Node.js..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements OpenJS.NodeJS
 Refresh-Path
 Write-Host "  Node installed: $(node --version)"
 
 # -- 4. Git for Windows (Git Bash) --
-Write-Host "[4/8] Installing Git for Windows..."
+Write-Host "[4/9] Installing Git for Windows..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements Git.Git
 Refresh-Path
@@ -95,27 +95,45 @@ if ($gitBashExe) {
 }
 
 # -- 5. Windows Terminal --
-Write-Host "[5/8] Installing Windows Terminal..."
+Write-Host "[5/9] Installing Windows Terminal..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements Microsoft.WindowsTerminal
 Write-Host "  Windows Terminal installed."
 
-# -- 6. Claude Code --
-Write-Host "[6/8] Installing Claude Code..."
+# -- 6. Oh My Posh --
+Write-Host "[6/9] Installing Oh My Posh..."
+
+winget install --silent --accept-package-agreements --accept-source-agreements "JanDe Jong.OhMyPosh"
+Refresh-Path
+
+# CascadiaCode Nerd Font is required for glyph rendering in most themes.
+oh-my-posh font install CascadiaCode --user
+
+# Add Oh My Posh init to the PowerShell profile using the jandedobbeleer theme.
+# The profile file may not exist yet; ensure its directory does.
+$profileDir = Split-Path $PROFILE -Parent
+if (-not (Test-Path $profileDir)) { New-Item -ItemType Directory -Force -Path $profileDir | Out-Null }
+if (-not (Test-Path $PROFILE))    { New-Item -ItemType File    -Force -Path $PROFILE    | Out-Null }
+Add-Content -Path $PROFILE -Value 'oh-my-posh init pwsh --config "$env:POSH_THEMES_PATH\jandedobbeleer.omp.json" | Invoke-Expression'
+Write-Host "  Oh My Posh installed (theme: jandedobbeleer, font: CascadiaCode NF)."
+Write-Host "  Themes directory: `$env:POSH_THEMES_PATH -- swap theme by editing `$PROFILE."
+
+# -- 7. Claude Code --
+Write-Host "[7/9] Installing Claude Code..."
 
 npm install -g @anthropic-ai/claude-code
 Refresh-Path
 Write-Host "  Claude Code installed: $(claude --version)"
 
-# -- 7. Authenticate --
-Write-Host "[7/8] Authenticating with Claude..."
+# -- 8. Authenticate --
+Write-Host "[8/9] Authenticating with Claude..."
 Write-Host "      A browser window will open. Complete the OAuth flow."
 Write-Host ""
 claude login
 Write-Host "  Authentication complete."
 
-# -- 8. Enable PSRemoting (for artifact extraction from host) --
-Write-Host "[8/8] Enabling PowerShell remoting..."
+# -- 9. Enable PSRemoting (for artifact extraction from host) --
+Write-Host "[9/9] Enabling PowerShell remoting..."
 
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 Set-Service WinRM -StartupType Automatic
