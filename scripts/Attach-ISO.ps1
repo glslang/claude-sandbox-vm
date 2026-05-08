@@ -15,7 +15,7 @@ param(
     [string]$ISOPath
 )
 
-$configPath = "$env:USERPROFILE\.claude-sandbox\config.json"
+$configPath = "$env:USERPROFILE\.agent-sandbox\config.json"
 $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
 
 if (-not (Test-Path $ISOPath)) {

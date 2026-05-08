@@ -1,5 +1,5 @@
 # Start-Session.ps1
-# Your daily driver. Starts a Claude Code dev session in the sandbox VM.
+# Your daily driver. Starts an agent dev session in the sandbox VM.
 
 #Requires -RunAsAdministrator
 
@@ -29,7 +29,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$cfg = Get-Content "$env:USERPROFILE\.claude-sandbox\config.json" -Raw | ConvertFrom-Json
+$cfg = Get-Content "$env:USERPROFILE\.agent-sandbox\config.json" -Raw | ConvertFrom-Json
 
 # Default artifact destination: <project>\artifacts
 if (-not $ArtifactDest) {
@@ -54,8 +54,8 @@ if ($Internet) {
 } else {
     # Ensure internal switch (no internet -- full isolation)
     $adapter = Get-VMNetworkAdapter -VMName $cfg.VMName
-    if ($adapter.SwitchName -ne "Claude-Internal") {
-        Connect-VMNetworkAdapter -VMName $cfg.VMName -SwitchName "Claude-Internal"
+    if ($adapter.SwitchName -ne "Agent-Internal") {
+        Connect-VMNetworkAdapter -VMName $cfg.VMName -SwitchName "Agent-Internal"
     }
 }
 
@@ -80,7 +80,7 @@ if ($vmState -eq "Off") {
 
 # -- Copy project into VM via PowerShell Direct --
 Write-Host "Copying project into VM..."
-$credPath = "$env:USERPROFILE\.claude-sandbox\vm-cred.xml"
+$credPath = "$env:USERPROFILE\.agent-sandbox\vm-cred.xml"
 if (Test-Path $credPath) {
     $cred = Import-Clixml $credPath
 } else {

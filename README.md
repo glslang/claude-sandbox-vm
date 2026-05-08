@@ -1,6 +1,6 @@
-# Claude Code Sandbox VM
+# Agent Sandbox VM
 
-A fully scripted Hyper-V sandbox for running [Claude Code](https://code.claude.com) on Windows with native MSVC toolchain support. Claude Code runs inside an isolated VM, builds real Windows binaries, and artifacts are automatically extracted back to your host.
+A fully scripted Hyper-V sandbox for running agent tools on Windows with native MSVC toolchain support. The agent runs inside an isolated VM, builds real Windows binaries, and artifacts are automatically extracted back to your host.
 
 ## Requirements
 
@@ -91,8 +91,8 @@ claude
 ### Restore to clean state
 
 ```powershell
-Stop-VM -Name ClaudeDevSandbox -Force
-Restore-VMCheckpoint -VMName ClaudeDevSandbox -Name CleanProvisionedBase -Confirm:$false
+Stop-VM -Name AgentDevSandbox -Force
+Restore-VMCheckpoint -VMName AgentDevSandbox -Name CleanProvisionedBase -Confirm:$false
 ```
 
 ---
@@ -100,12 +100,12 @@ Restore-VMCheckpoint -VMName ClaudeDevSandbox -Name CleanProvisionedBase -Confir
 ## File structure
 
 ```
-claude-sandbox-vm/
+agent-sandbox-vm/
 |-- Bootstrap.ps1              # One-time host setup
 |-- Start-Session.ps1          # Daily session launcher
 |
 |-- scripts/
-|   |-- New-ClaudeVM.ps1       # Creates the Hyper-V VM (Gen 2, TPM, Secure Boot)
+|   |-- New-AgentVM.ps1        # Creates the Hyper-V VM (Gen 2, TPM, Secure Boot)
 |   |-- Install-Windows.ps1    # Applies Windows to VHDX via DISM (no DVD boot)
 |   |-- Attach-ISO.ps1         # Alternative: boot from DVD if DISM not needed
 |   |-- Start-Provision.ps1    # Host-side: switches network, copies files into VM
@@ -115,7 +115,7 @@ claude-sandbox-vm/
 |   +-- Copy-Artifacts.ps1     # Extracts build outputs from VM to host
 |
 +-- vm/
-    +-- Start-ClaudeCode.ps1   # Optional: VM startup script
+    +-- Start-Agent.ps1        # Optional: VM startup script
 ```
 
 ---
@@ -136,7 +136,7 @@ claude-sandbox-vm/
 
 | Mode | Switch | Use case |
 |------|--------|----------|
-| Isolated (default) | Claude-Internal | No internet -- full sandbox |
+| Isolated (default) | Agent-Internal | No internet -- full sandbox |
 | Internet | Default Switch | cargo fetch, npm install, OAuth |
 
 Use `-Internet` flag on `Start-Session.ps1` to enable internet access.
@@ -185,7 +185,7 @@ To persist the change across sessions, shut down the VM and re-snapshot after ed
 Ensure the VM has finished booting and you've logged in at least once. PSRemoting must be enabled (done by Invoke-Provision.ps1).
 
 **VM has no internet**
-Use `-Internet` flag or manually switch: `Connect-VMNetworkAdapter -VMName ClaudeDevSandbox -SwitchName "Default Switch"`
+Use `-Internet` flag or manually switch: `Connect-VMNetworkAdapter -VMName AgentDevSandbox -SwitchName "Default Switch"`
 
 **Re-authentication when OAuth expires**
 Start the VM with internet, run `claude login` inside it, shut down, take a new snapshot.

@@ -1,7 +1,7 @@
 # scripts/Save-VMCredentials.ps1
 # Run once on host. Saves VM login credentials securely for unattended artifact extraction.
 
-$credPath = "$env:USERPROFILE\.claude-sandbox\vm-cred.xml"
+$credPath = "$env:USERPROFILE\.agent-sandbox\vm-cred.xml"
 
 Write-Host "Enter the username and password for the VM Windows account."
 Write-Host "(This is the account you created during Windows setup inside the VM.)"

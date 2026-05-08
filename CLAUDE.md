@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-A PowerShell-based infrastructure toolkit that creates an isolated Hyper-V sandbox VM on Windows, purpose-built for running Claude Code with a native MSVC toolchain. Claude Code runs inside the VM, builds real Windows binaries (C++, Rust), and artifacts are extracted back to the host via PowerShell Direct (VMBus — no network required).
+A PowerShell-based infrastructure toolkit that creates an isolated Hyper-V sandbox VM on Windows, purpose-built for running agent tools with a native MSVC toolchain. The agent runs inside the VM, builds real Windows binaries (C++, Rust), and artifacts are extracted back to the host via PowerShell Direct (VMBus — no network required).
 
 **Requirements to use this project:** Windows 10/11 Pro/Enterprise with Hyper-V, a Windows 11 ISO, and a Claude Pro subscription. All scripts must be run as Administrator.
 
@@ -64,8 +64,8 @@ claude
 
 ```powershell
 # Manually restore to clean snapshot
-Stop-VM -Name ClaudeDevSandbox -Force
-Restore-VMCheckpoint -VMName ClaudeDevSandbox -Name CleanProvisionedBase -Confirm:$false
+Stop-VM -Name AgentDevSandbox -Force
+Restore-VMCheckpoint -VMName AgentDevSandbox -Name CleanProvisionedBase -Confirm:$false
 
 # Re-authenticate when OAuth expires (run inside VM with internet)
 claude login
@@ -79,46 +79,46 @@ claude login
 | Script | Where It Runs | Purpose |
 |--------|---------------|---------|
 | `Bootstrap.ps1` | Host | One-time setup orchestrator |
-| `scripts/New-ClaudeVM.ps1` | Host | Creates Gen 2 VM (TPM, Secure Boot, SCSI layout) |
+| `scripts/New-AgentVM.ps1` | Host | Creates Gen 2 VM (TPM, Secure Boot, SCSI layout) |
 | `scripts/Install-Windows.ps1` | Host | Applies Windows to VHDX via DISM (bypasses DVD boot) |
 | `scripts/Start-Provision.ps1` | Host | Switches to Default Switch, copies VS layout + provisioner into VM |
 | `scripts/Invoke-Provision.ps1` | **VM** | Installs VS Build Tools, Rust (MSVC), Node.js, Claude Code, enables PSRemoting |
 | `scripts/Save-BaseSnapshot.ps1` | Host | Captures `CleanProvisionedBase` checkpoint |
-| `scripts/Save-VMCredentials.ps1` | Host | Encrypts VM creds to `~/.claude-sandbox/vm-cred.xml` |
+| `scripts/Save-VMCredentials.ps1` | Host | Encrypts VM creds to `~/.agent-sandbox/vm-cred.xml` |
 | `Start-Session.ps1` | Host | Daily driver: restore/switch network/sync project/open console |
 | `scripts/Copy-Artifacts.ps1` | Host | Pulls build outputs from VM via PowerShell Direct |
 | `scripts/Open-VMConsole.ps1` | Host | Launches `vmconnect.exe`, pre-writing the saved-config XML to skip Hyper-V's display dialog |
-| `vm/Start-ClaudeCode.ps1` | VM | Optional VM startup script |
+| `vm/Start-Agent.ps1` | VM | Optional VM startup script |
 
 ### File Transfer Strategy
 
 All host↔VM file transfer uses **PowerShell Direct** (VMBus), which works without any network configuration:
 - Project sync into VM: `Copy-Item -ToSession` (excludes `artifacts/`, `.git/`, `target/`)
 - Artifact extraction: `Copy-Item -FromSession`
-- Pre-boot fallback: robocopy to SMB share at `\\localhost\ClaudeSandboxShare`
+- Pre-boot fallback: robocopy to SMB share at `\\localhost\AgentSandboxShare`
 
 ### Networking
 
 Two modes, switched via `Connect-VMNetworkAdapter`:
-- **`Claude-Internal`** (default): internal switch, VM can reach host but not internet
+- **`Agent-Internal`** (default): internal switch, VM can reach host but not internet
 - **`Default Switch`**: NAT switch, gives VM internet access for package fetches
 
 ### Configuration
 
-All scripts read `~/.claude-sandbox/config.json` (written by Bootstrap.ps1):
+All scripts read `~/.agent-sandbox/config.json` (written by Bootstrap.ps1):
 ```json
 {
-  "VMName": "ClaudeDevSandbox",
-  "VMPath": "D:\\Hyper-V\\ClaudeDevSandbox",
+  "VMName": "AgentDevSandbox",
+  "VMPath": "D:\\Hyper-V\\AgentDevSandbox",
   "SharedDrive": "D:\\Hyper-V\\Shared",
-  "CacheRoot": "D:\\ClaudeSandboxCache",
-  "CredPath": "%USERPROFILE%\\.claude-sandbox",
+  "CacheRoot": "D:\\AgentSandboxCache",
+  "CredPath": "%USERPROFILE%\\.agent-sandbox",
   "ProjectsRoot": "D:\\workspace"
 }
 ```
 Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host Windows user who created it).
 
-### VM Spec (set in `New-ClaudeVM.ps1`)
+### VM Spec (set in `New-AgentVM.ps1`)
 
 - Gen 2, 80 GB dynamic VHDX, 4 vCPU, 4 GB RAM (dynamic 2–4 GB)
 - Secure Boot + TPM 2.0 (required for Windows 11)
@@ -137,6 +137,6 @@ Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host 
 - All scripts use `$ErrorActionPreference = "Stop"` — any uncaught error aborts execution.
 - Scripts that create directories use `New-Item -Force` to be idempotent.
 - `robocopy` exit codes 0–7 are success; the scripts treat non-zero robocopy exit as non-fatal (pipe to `Out-Null`).
-- The VS Build Tools offline layout (`D:\ClaudeSandboxCache\vs-layout\`) is downloaded once during Bootstrap and reused on every provision — avoid deleting it.
+- The VS Build Tools offline layout (`D:\AgentSandboxCache\vs-layout\`) is downloaded once during Bootstrap and reused on every provision — avoid deleting it.
 - `Copy-Artifacts.ps1` defaults to extracting `*.exe`, `*.dll`, `*.pdb` from `C:\workspace\target\release`; pass `-ExtraPatterns` for additional types.
 - All console launches go through `scripts/Open-VMConsole.ps1`, which pre-populates the per-VM `vmconnect.rdp.<GUID>.config` (windowed 1920x1080) so Hyper-V's display-configuration dialog is skipped on first launch. Don't add raw `vmconnect.exe` calls.
