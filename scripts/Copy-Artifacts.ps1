@@ -13,8 +13,8 @@ param(
     [switch]$WaitForShutdown
 )
 
-$cfg      = Get-Content "$env:USERPROFILE\.claude-sandbox\config.json" | ConvertFrom-Json
-$cred     = Import-Clixml "$env:USERPROFILE\.claude-sandbox\vm-cred.xml"
+$cfg      = Get-Content "$env:USERPROFILE\.agent-sandbox\config.json" | ConvertFrom-Json
+$cred     = Import-Clixml "$env:USERPROFILE\.agent-sandbox\vm-cred.xml"
 $DestPath = Resolve-Path $DestPath -ErrorAction SilentlyContinue ?? $DestPath
 
 # -- Optionally wait for VM shutdown --

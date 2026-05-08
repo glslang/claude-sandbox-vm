@@ -7,17 +7,17 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "----------------------------------------------"
-Write-Host "  Claude Code Sandbox VM -- Bootstrap Setup"
+Write-Host "  Agent Sandbox VM -- Bootstrap Setup"
 Write-Host "----------------------------------------------"
 Write-Host ""
 
 # -- Config --
 $config = @{
-    VMName        = "ClaudeDevSandbox"
-    VMPath        = "D:\Hyper-V\ClaudeDevSandbox"
+    VMName        = "AgentDevSandbox"
+    VMPath        = "D:\Hyper-V\AgentDevSandbox"
     SharedDrive   = "D:\Hyper-V\Shared"
-    CacheRoot     = "D:\ClaudeSandboxCache"
-    CredPath      = "$env:USERPROFILE\.claude-sandbox"
+    CacheRoot     = "D:\AgentSandboxCache"
+    CredPath      = "$env:USERPROFILE\.agent-sandbox"
     ProjectsRoot  = "D:\workspace"
 }
 
@@ -116,7 +116,7 @@ Write-Host "[4/6] Creating Hyper-V VM..."
 if (Get-VM -Name $config.VMName -ErrorAction SilentlyContinue) {
     Write-Host "  VM '$($config.VMName)' already exists, skipping creation."
 } else {
-    & "$PSScriptRoot\scripts\New-ClaudeVM.ps1"
+    & "$PSScriptRoot\scripts\New-AgentVM.ps1"
     Write-Host "  VM created: $($config.VMName)"
 }
 

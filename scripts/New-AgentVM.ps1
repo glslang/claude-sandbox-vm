@@ -1,11 +1,11 @@
-# scripts/New-ClaudeVM.ps1
+# scripts/New-AgentVM.ps1
 # Creates the Hyper-V VM. Called by Bootstrap.ps1.
 # Gen 2 VM with Secure Boot + TPM (required for Windows 11).
 # HDD and DVD on separate SCSI controllers to avoid boot issues.
 
 #Requires -RunAsAdministrator
 
-$configPath = "$env:USERPROFILE\.claude-sandbox\config.json"
+$configPath = "$env:USERPROFILE\.agent-sandbox\config.json"
 if (-not (Test-Path $configPath)) {
     Write-Error "Config not found at $configPath -- run Bootstrap.ps1 first."
     exit 1
@@ -16,7 +16,7 @@ $VHDPath    = "$($cfg.VMPath)\$($cfg.VMName).vhdx"
 $VHDSizeGB  = 80
 $MemoryGB   = 4
 $CPUCount   = 4
-$SwitchName = "Claude-Internal"
+$SwitchName = "Agent-Internal"
 
 # Internal network switch (VM can reach host, not your LAN)
 if (-not (Get-VMSwitch -Name $SwitchName -ErrorAction SilentlyContinue)) {
@@ -70,7 +70,7 @@ Write-Host "  DVD controller: $((Get-VMDvdDrive -VMName $cfg.VMName).ControllerN
 Enable-VMIntegrationService -VMName $cfg.VMName -Name "Guest Service Interface"
 
 # SMB share (handy for file drops before PSRemoting is up)
-$shareName = "ClaudeSandboxShare"
+$shareName = "AgentSandboxShare"
 if (-not (Get-SmbShare -Name $shareName -ErrorAction SilentlyContinue)) {
     New-SmbShare -Name $shareName `
                  -Path $cfg.SharedDrive `

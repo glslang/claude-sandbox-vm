@@ -9,7 +9,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$configPath = "$env:USERPROFILE\.claude-sandbox\config.json"
+$configPath = "$env:USERPROFILE\.agent-sandbox\config.json"
 $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
 
 Write-Host ""
@@ -46,7 +46,7 @@ if ($currentSwitch -eq "Default Switch") {
 }
 
 # -- Get VM credentials --
-$credPath = "$env:USERPROFILE\.claude-sandbox\vm-cred.xml"
+$credPath = "$env:USERPROFILE\.agent-sandbox\vm-cred.xml"
 if (Test-Path $credPath) {
     $cred = Import-Clixml $credPath
 } else {

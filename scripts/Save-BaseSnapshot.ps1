@@ -4,7 +4,7 @@
 
 #Requires -RunAsAdministrator
 
-$cfg = Get-Content "$env:USERPROFILE\.claude-sandbox\config.json" | ConvertFrom-Json
+$cfg = Get-Content "$env:USERPROFILE\.agent-sandbox\config.json" | ConvertFrom-Json
 
 Write-Host "Waiting for VM to be fully shut down..."
 $timeout = 60
@@ -21,9 +21,9 @@ while ((Get-VM -Name $cfg.VMName).State -ne "Off") {
 }
 
 # Switch back to internal-only network for isolation
-Write-Host "Switching network back to internal-only (Claude-Internal)..."
-Get-VM -Name $cfg.VMName | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName "Claude-Internal"
-Write-Host "  Network: Claude-Internal (isolated)"
+Write-Host "Switching network back to internal-only (Agent-Internal)..."
+Get-VM -Name $cfg.VMName | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName "Agent-Internal"
+Write-Host "  Network: Agent-Internal (isolated)"
 
 Write-Host "Taking snapshot: CleanProvisionedBase..."
 Checkpoint-VM -Name $cfg.VMName -SnapshotName "CleanProvisionedBase"

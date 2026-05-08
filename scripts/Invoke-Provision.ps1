@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "----------------------------------------------"
-Write-Host "  Claude Code Sandbox VM -- Provisioning"
+Write-Host "  Agent Sandbox VM -- Provisioning"
 Write-Host "----------------------------------------------"
 Write-Host ""
 
