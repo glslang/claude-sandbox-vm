@@ -132,7 +132,7 @@ Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host 
 - Node.js (latest via winget)
 - Python 3 (latest via winget)
 - Claude Code (`@anthropic-ai/claude-code`) authenticated via OAuth
-- OpenAI CLI (`openai` via pip)
+- OpenAI CLI (`openai` via pip) and Codex CLI (`@openai/codex` via npm)
 
 ## Conventions
 
