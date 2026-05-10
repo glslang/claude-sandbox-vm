@@ -132,14 +132,8 @@ npm install -g @anthropic-ai/claude-code
 Refresh-Path
 Write-Host "  Claude Code installed: $(claude --version)"
 
-# -- 8. OpenAI tools --
-Write-Host "[9/11] Installing Python, OpenAI CLI, and Codex CLI..."
-
-winget install --silent --accept-package-agreements --accept-source-agreements Python.Python.3
-Refresh-Path
-pip install --upgrade openai
-Refresh-Path
-Write-Host "  OpenAI CLI installed: $(openai --version)"
+# -- 8. OpenAI Codex CLI --
+Write-Host "[9/11] Installing OpenAI Codex CLI..."
 
 npm install -g @openai/codex
 Refresh-Path
