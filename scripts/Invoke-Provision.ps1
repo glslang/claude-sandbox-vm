@@ -26,12 +26,12 @@ function Refresh-Path {
 # -- 0. Execution Policy --
 # Set machine-wide policy so npm-installed .ps1 wrappers (e.g. claude.ps1) run
 # in all future sessions without needing -ExecutionPolicy Bypass each time.
-Write-Host "[1/10] Setting execution policy..."
+Write-Host "[1/11] Setting execution policy..."
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine -Force
 Write-Host "  ExecutionPolicy set to RemoteSigned (LocalMachine)."
 
 # -- 1. VS Build Tools --
-Write-Host "[2/10] Installing VS Build Tools..."
+Write-Host "[2/11] Installing VS Build Tools..."
 
 $layoutInstaller = "C:\vs-cache\layout\vs_buildtools.exe"
 $onlineInstaller = "$env:TEMP\vs_buildtools.exe"
@@ -63,7 +63,7 @@ if ($proc.ExitCode -notin 0, 3010) {
 }
 
 # -- 2. Rust (MSVC toolchain) --
-Write-Host "[3/10] Installing Rust..."
+Write-Host "[3/11] Installing Rust..."
 
 Invoke-WebRequest "https://win.rustup.rs/x86_64" -OutFile "$env:TEMP\rustup-init.exe"
 & "$env:TEMP\rustup-init.exe" -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
@@ -72,14 +72,14 @@ rustup component add clippy rustfmt
 Write-Host "  Rust installed: $(rustc --version)"
 
 # -- 3. Node.js --
-Write-Host "[4/10] Installing Node.js..."
+Write-Host "[4/11] Installing Node.js..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements OpenJS.NodeJS
 Refresh-Path
 Write-Host "  Node installed: $(node --version)"
 
 # -- 4. Git for Windows (Git Bash) --
-Write-Host "[5/10] Installing Git for Windows..."
+Write-Host "[5/11] Installing Git for Windows..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements Git.Git
 Refresh-Path
@@ -102,13 +102,13 @@ if ($gitBashExe) {
 }
 
 # -- 5. Windows Terminal --
-Write-Host "[6/10] Installing Windows Terminal..."
+Write-Host "[6/11] Installing Windows Terminal..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements Microsoft.WindowsTerminal
 Write-Host "  Windows Terminal installed."
 
 # -- 6. Oh My Posh --
-Write-Host "[7/10] Installing Oh My Posh..."
+Write-Host "[7/11] Installing Oh My Posh..."
 
 winget install --silent --accept-package-agreements --accept-source-agreements "JanDe Jong.OhMyPosh"
 Refresh-Path
@@ -126,21 +126,30 @@ Write-Host "  Oh My Posh installed (theme: jandedobbeleer, font: CascadiaCode NF
 Write-Host "  Themes directory: `$env:POSH_THEMES_PATH -- swap theme by editing `$PROFILE."
 
 # -- 7. Claude Code --
-Write-Host "[8/10] Installing Claude Code..."
+Write-Host "[8/11] Installing Claude Code..."
 
 npm install -g @anthropic-ai/claude-code
 Refresh-Path
 Write-Host "  Claude Code installed: $(claude --version)"
 
-# -- 8. Authenticate --
-Write-Host "[9/10] Authenticating with Claude..."
+# -- 8. OpenAI CLI --
+Write-Host "[9/11] Installing Python and OpenAI CLI..."
+
+winget install --silent --accept-package-agreements --accept-source-agreements Python.Python.3
+Refresh-Path
+pip install --upgrade openai
+Refresh-Path
+Write-Host "  OpenAI CLI installed: $(openai --version)"
+
+# -- 9. Authenticate --
+Write-Host "[10/11] Authenticating with Claude..."
 Write-Host "      A browser window will open. Complete the OAuth flow."
 Write-Host ""
 claude login
 Write-Host "  Authentication complete."
 
-# -- 9. Enable PSRemoting (for artifact extraction from host) --
-Write-Host "[10/10] Enabling PowerShell remoting..."
+# -- 10. Enable PSRemoting (for artifact extraction from host) --
+Write-Host "[11/11] Enabling PowerShell remoting..."
 
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 Set-Service WinRM -StartupType Automatic
