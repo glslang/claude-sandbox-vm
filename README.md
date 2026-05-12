@@ -6,7 +6,7 @@ A fully scripted Hyper-V sandbox for running agent tools on Windows with native 
 
 - Windows 10/11 **Pro or Enterprise** (Hyper-V required)
 - A Windows 11 ISO ([Media Creation Tool](https://www.microsoft.com/software-download/windows11))
-- A [Claude Pro subscription](https://claude.ai) (no API key needed)
+- A [Claude Pro subscription](https://claude.ai) (no API key needed) and/or an [OpenAI API key](https://platform.openai.com/api-keys) (for Codex CLI)
 - ~15 GB free disk space
 - Run everything as **Administrator**
 
