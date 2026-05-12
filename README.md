@@ -6,7 +6,7 @@ A fully scripted Hyper-V sandbox for running agent tools on Windows with native 
 
 - Windows 10/11 **Pro or Enterprise** (Hyper-V required)
 - A Windows 11 ISO ([Media Creation Tool](https://www.microsoft.com/software-download/windows11))
-- A [Claude Pro subscription](https://claude.ai) (no API key needed)
+- A [Claude Pro subscription](https://claude.ai) (no API key needed) and/or an [OpenAI API key](https://platform.openai.com/api-keys) (for Codex CLI)
 - ~15 GB free disk space
 - Run everything as **Administrator**
 
@@ -43,7 +43,7 @@ Then **inside the VM**, run:
 powershell -ExecutionPolicy Bypass -File C:\Invoke-Provision.ps1
 ```
 
-This installs VS Build Tools, Rust (MSVC), Node.js, Git, Windows Terminal, Oh My Posh (with CascadiaCode Nerd Font), and Claude Code, then does OAuth login.
+This installs VS Build Tools, Rust (MSVC), Node.js, Git, Windows Terminal, Oh My Posh (with CascadiaCode Nerd Font), Claude Code, and OpenAI Codex CLI, then does OAuth login.
 
 ### Step 4 -- Snapshot
 
@@ -77,7 +77,8 @@ Your project is copied to `C:\workspace` inside the VM. Then:
 
 ```powershell
 cd C:\workspace
-claude
+claude   # Claude Code
+codex    # OpenAI Codex CLI
 ```
 
 ### Extract artifacts
