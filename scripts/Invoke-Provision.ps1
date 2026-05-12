@@ -140,11 +140,17 @@ Refresh-Path
 Write-Host "  Codex CLI installed: $(codex --version)"
 
 # -- 9. Authenticate --
-Write-Host "[10/11] Authenticating with Claude..."
-Write-Host "      A browser window will open. Complete the OAuth flow."
+Write-Host "[10/11] Authenticating with Claude (optional)..."
+Write-Host "  Skip this step if you are using OpenAI Codex CLI only."
 Write-Host ""
-claude login
-Write-Host "  Authentication complete."
+$reply = Read-Host "  Authenticate with Claude now? [Y/n]"
+if ($reply -eq '' -or $reply -match '^[Yy]') {
+    Write-Host "  A browser window will open. Complete the OAuth flow."
+    claude login
+    Write-Host "  Authentication complete."
+} else {
+    Write-Host "  Skipped. Run 'claude login' inside the VM whenever you need it."
+}
 
 # -- 10. Enable PSRemoting (for artifact extraction from host) --
 Write-Host "[11/11] Enabling PowerShell remoting..."
