@@ -130,6 +130,7 @@ Credentials are stored as an encrypted `vm-cred.xml` (only readable by the host 
 - VS Build Tools 2026 with `VCTools` workload + Windows 11 SDK 26100 + CMake
 - Rust stable (`x86_64-pc-windows-msvc`) with clippy and rustfmt
 - Node.js (latest via winget)
+- GitHub CLI (`gh` via winget)
 - Claude Code (`@anthropic-ai/claude-code`) authenticated via OAuth
 - OpenAI Codex CLI (`@openai/codex` via npm)
 
